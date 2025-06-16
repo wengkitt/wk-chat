@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Outlet } from "react-router";
 import { Header, Sidebar } from "../components";
 
@@ -10,7 +10,7 @@ interface Chat {
 }
 
 function ChatLayout() {
-  const [currentModel, setCurrentModel] = useState("gpt-4");
+  const [currentModel, _] = useState("gpt-4");
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [chats, setChats] = useState<Chat[]>([

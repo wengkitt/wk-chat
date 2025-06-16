@@ -1,5 +1,3 @@
-import React from "react";
-
 interface Chat {
   id: string;
   title: string;

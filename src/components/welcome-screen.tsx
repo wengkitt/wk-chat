@@ -1,5 +1,3 @@
-import React from "react";
-
 interface WelcomeScreenProps {
   onExampleClick: (example: string) => void;
 }
