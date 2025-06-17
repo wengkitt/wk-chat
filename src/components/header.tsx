@@ -1,7 +1,6 @@
 import React from "react";
 
 interface HeaderProps {
-  onNewChat: () => void;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
 }
@@ -41,7 +40,7 @@ const themes = [
   { id: "sunset", name: "Sunset", icon: "🌅" },
 ];
 
-function Header({ onNewChat, isSidebarOpen, onToggleSidebar }: HeaderProps) {
+function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
   const [currentTheme, setCurrentTheme] = React.useState("light");
 
   React.useEffect(() => {
@@ -83,23 +82,6 @@ function Header({ onNewChat, isSidebarOpen, onToggleSidebar }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={onNewChat} className="btn btn-primary btn-sm">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            New Chat
-          </button>
-
           {/* Theme Selector */}
           <div className="dropdown dropdown-end">
             <div
@@ -157,49 +139,6 @@ function Header({ onNewChat, isSidebarOpen, onToggleSidebar }: HeaderProps) {
                   </li>
                 ))}
               </div>
-            </ul>
-          </div>
-
-          {/* User Menu */}
-          <div className="dropdown dropdown-end">
-            <div
-              tabIndex={0}
-              role="button"
-              className="btn btn-ghost btn-circle btn-sm"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-            </div>
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300"
-            >
-              <li>
-                <a>Profile Settings</a>
-              </li>
-              <li>
-                <a>API Keys</a>
-              </li>
-              <li>
-                <a>Export Chats</a>
-              </li>
-              <li>
-                <hr className="my-1" />
-              </li>
-              <li>
-                <a>Sign Out</a>
-              </li>
             </ul>
           </div>
         </div>

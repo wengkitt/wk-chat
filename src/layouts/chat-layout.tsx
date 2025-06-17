@@ -68,12 +68,12 @@ function ChatLayout() {
           currentChatId={currentChatId}
           onChatSelect={handleChatSelect}
           onChatDelete={handleChatDelete}
+          onNewChat={handleNewChat}
           isOpen={isSidebarOpen}
         />
 
         <main className="flex-1 flex flex-col overflow-hidden">
           <Header
-            onNewChat={handleNewChat}
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={handleToggleSidebar}
           />

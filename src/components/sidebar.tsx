@@ -10,6 +10,7 @@ interface SidebarProps {
   currentChatId: string | null;
   onChatSelect: (chatId: string) => void;
   onChatDelete: (chatId: string) => void;
+  onNewChat: () => void;
   isOpen: boolean;
 }
 
@@ -18,6 +19,7 @@ function Sidebar({
   currentChatId,
   onChatSelect,
   onChatDelete,
+  onNewChat,
   isOpen,
 }: SidebarProps) {
   const formatTime = (date: Date) => {
@@ -60,6 +62,41 @@ function Sidebar({
             />
           </svg>
           WK Chat
+        </h2>
+      </div>
+      <div className="p-4 border-b border-base-300">
+        <button onClick={onNewChat} className="btn btn-primary w-full mb-4">
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          New Chat
+        </button>
+
+        <h2 className="font-semibold text-base-content flex items-center gap-2">
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
+          </svg>
+          Recent Chats
         </h2>
       </div>
 
@@ -147,6 +184,129 @@ function Sidebar({
             <p className="text-xs mt-1">Start a new chat to begin</p>
           </div>
         )}
+      </div>
+      {/* Profile Section at Bottom */}
+      <div className="border-t border-base-300 p-4">
+        <div className="dropdown dropdown-top dropdown-end w-full">
+          <div
+            tabIndex={0}
+            role="button"
+            className="btn btn-ghost w-full justify-start"
+          >
+            <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </div>
+            <div className="flex-1 text-left">
+              <div className="font-medium text-sm">User Profile</div>
+              <div className="text-xs text-base-content/60">Manage account</div>
+            </div>
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+          <ul
+            tabIndex={0}
+            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full p-2 shadow-lg border border-base-300 mb-2"
+          >
+            <li>
+              <a className="flex items-center gap-3">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+                Profile Settings
+              </a>
+            </li>
+            <li>
+              <a href="/api-keys" className="flex items-center gap-3">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                  />
+                </svg>
+                API Keys
+              </a>
+            </li>
+            <li>
+              <a className="flex items-center gap-3">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                Export Chats
+              </a>
+            </li>
+            <li>
+              <hr className="my-1" />
+            </li>
+            <li>
+              <a className="flex items-center gap-3 text-error">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+                Sign Out
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
     </aside>
   );

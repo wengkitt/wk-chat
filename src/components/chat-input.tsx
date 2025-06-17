@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { hasApiKeyForProvider, getProviderForModel } from "../utils/api-keys";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -28,6 +29,20 @@ function ChatInput({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !isLoading) {
+      const provider = getProviderForModel(currentModel);
+      if (!hasApiKeyForProvider(provider)) {
+        // Show warning or redirect to API keys page
+        const shouldRedirect = confirm(
+          `You need to add an API key for ${
+            models.find((m) => m.id === currentModel)?.provider
+          } to use this model. Would you like to add one now?`
+        );
+        if (shouldRedirect) {
+          window.location.href = "/api-keys";
+        }
+        return;
+      }
+
       onSendMessage(message.trim());
       setMessage("");
     }
@@ -48,17 +63,53 @@ function ChatInput({
     }
   }, [message]);
 
+  const currentProvider = getProviderForModel(currentModel);
+  const hasRequiredApiKey = hasApiKeyForProvider(currentProvider);
+
   return (
     <div className="border-t border-base-300 bg-base-100 p-4">
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+        {!hasRequiredApiKey && (
+          <div className="alert alert-warning mb-4">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+            <div>
+              <div className="font-bold">API Key Required</div>
+              <div className="text-sm">
+                You need to add an API key for{" "}
+                {models.find((m) => m.id === currentModel)?.provider} to use
+                this model.
+                <a href="/api-keys" className="link link-primary ml-1">
+                  Add API Key
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="relative">
           <textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={isLoading}
+            placeholder={
+              hasRequiredApiKey
+                ? placeholder
+                : "Add an API key to start chatting..."
+            }
+            disabled={isLoading || !hasRequiredApiKey}
             className="textarea textarea-bordered w-full min-h-[60px] max-h-[200px] resize-none pr-12 text-base"
             rows={1}
           />
@@ -70,7 +121,7 @@ function ChatInput({
 
             <button
               type="submit"
-              disabled={!message.trim() || isLoading}
+              disabled={!message.trim() || isLoading || !hasRequiredApiKey}
               className="btn btn-primary btn-sm btn-circle"
             >
               <svg
@@ -135,21 +186,44 @@ function ChatInput({
                 tabIndex={0}
                 className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300 mb-2"
               >
-                {models.map((model) => (
-                  <li key={model.id}>
-                    <a
-                      onClick={() => onModelChange(model.id)}
-                      className={currentModel === model.id ? "active" : ""}
-                    >
-                      <div>
-                        <div className="font-medium">{model.name}</div>
-                        <div className="text-xs text-base-content/60">
-                          {model.provider}
+                {models.map((model) => {
+                  const modelProvider = getProviderForModel(model.id);
+                  const hasKey = hasApiKeyForProvider(modelProvider);
+
+                  return (
+                    <li key={model.id}>
+                      <a
+                        onClick={() => onModelChange(model.id)}
+                        className={`${
+                          currentModel === model.id ? "active" : ""
+                        } ${!hasKey ? "opacity-50" : ""}`}
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium flex items-center gap-2">
+                            {model.name}
+                            {!hasKey && (
+                              <svg
+                                className="w-3 h-3 text-warning"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="text-xs text-base-content/60">
+                            {model.provider}
+                            {!hasKey && " • API key required"}
+                          </div>
                         </div>
-                      </div>
-                    </a>
-                  </li>
-                ))}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 
