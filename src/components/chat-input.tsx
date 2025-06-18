@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { hasApiKeyForProvider, getProviderForModel } from "../utils/api-keys";
+import { Link, useNavigate } from "react-router";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -25,6 +26,7 @@ function ChatInput({
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +40,7 @@ function ChatInput({
           } to use this model. Would you like to add one now?`
         );
         if (shouldRedirect) {
-          window.location.href = "/api-keys";
+          navigate("/api-keys");
         }
         return;
       }
@@ -90,9 +92,9 @@ function ChatInput({
                 You need to add an API key for{" "}
                 {models.find((m) => m.id === currentModel)?.provider} to use
                 this model.
-                <a href="/api-keys" className="link link-primary ml-1">
+                <Link to="/api-keys" className="link link-primary ml-1">
                   Add API Key
-                </a>
+                </Link>
               </div>
             </div>
           </div>
