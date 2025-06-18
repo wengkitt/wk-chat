@@ -1,184 +1,127 @@
-import { useState, useRef, useEffect } from "react";
-import { useOutletContext } from "react-router";
-import { ChatInput, ChatMessage, WelcomeScreen } from "../components";
+import { useState, useEffect, useRef } from "react";
+import { useOutletContext } from "react-router-dom";
+import { useQuery, useAction } from "convex/react";
+import { api } from "../../convex/_generated/api"; // Adjusted path
+import { Doc, Id } from "../../convex/_generated/dataModel"; // Adjusted path
+import ChatMessage from "../components/chat-message";
+import ChatInput from "../components/chat-input";
+import WelcomeScreen from "../components/welcome-screen";
+import { ChatLayoutContext } from "../layouts/chat-layout"; // Import the context type
 
+// Define the frontend Message interface
 interface Message {
-  id: string;
+  id: Id<"messages">; // Use Convex Id type
+  role: "user" | "assistant" | "system";
   content: string;
-  role: "user" | "assistant";
-  timestamp: Date;
   model?: string;
+  timestamp: number; // Store as number (milliseconds since epoch)
 }
 
-interface ChatContext {
-  currentModel: string;
-  currentChatId: string | null;
-  chats: any[];
-  onNewChat: () => void;
-  onModelChange: (model: string) => void;
-}
-
-function Chat() {
-  const { currentModel, currentChatId, onNewChat, onModelChange } =
-    useOutletContext<ChatContext>();
+const ChatPage = () => {
+  const { currentChatId, currentModel, handleNewChat, isCreatingChat } = useOutletContext<ChatLayoutContext>();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // Fetch messages for the current chat
+  const fetchedMessages = useQuery(
+    api.chat.listMessages,
+    currentChatId ? { chatId: currentChatId as Id<"chats"> } : "skip" // Ensure chatId is Id<"chats">
+  );
+
+  const sendMessageAction = useAction(api.chat.sendMessage);
 
   useEffect(() => {
-    scrollToBottom();
+    if (fetchedMessages) {
+      const formattedMessages: Message[] = fetchedMessages.map((msg: Doc<"messages">) => ({
+        id: msg._id,
+        role: msg.role,
+        content: msg.content,
+        model: msg.model,
+        timestamp: msg.timestamp, // Already a number
+      }));
+      setMessages(formattedMessages);
+    } else {
+      setMessages([]); // Clear messages if no chat is selected or no messages fetched
+    }
+  }, [fetchedMessages]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Load messages for current chat (mock data for demo)
-  useEffect(() => {
-    if (currentChatId) {
-      // In a real app, you'd load messages from your backend/storage
-      setMessages([
-        {
-          id: "1",
-          content: "Hello! How can I help you today?",
-          role: "assistant",
-          timestamp: new Date(Date.now() - 1000 * 60 * 5),
-          model: currentModel,
-        },
-      ]);
-    } else {
-      setMessages([]);
-    }
-  }, [currentChatId, currentModel]);
-
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (inputValue: string) => {
     if (!currentChatId) {
-      onNewChat();
-    }
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      role: "user",
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: `I understand you're asking about: "${content}". This is a demo response from ${currentModel}. In a real implementation, this would be connected to the actual AI model APIs.`,
-        role: "assistant",
-        timestamp: new Date(),
-        model: currentModel,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 1000 + Math.random() * 2000);
-  };
-
-  const handleCopyMessage = async (content: string) => {
-    try {
-      await navigator.clipboard.writeText(content);
-      // You could show a toast notification here
-    } catch (err) {
-      console.error("Failed to copy message:", err);
-    }
-  };
-
-  const handleRegenerate = () => {
-    if (messages.length > 0) {
-      const lastUserMessage = [...messages]
-        .reverse()
-        .find((m) => m.role === "user");
-      if (lastUserMessage) {
-        // Remove the last assistant message and regenerate
-        setMessages((prev) => prev.slice(0, -1));
-        handleSendMessage(lastUserMessage.content);
+      // This case should ideally be handled by the layout by creating a new chat
+      // or disabling the input if no chat is active.
+      // For now, let's try to create a new one if input is attempted.
+      if (!isCreatingChat) {
+        console.log("No active chat. Attempting to create a new one.");
+        await handleNewChat(); // This will navigate and set currentChatId
+        // User will need to resend the message in the new chat.
+        // Or, we could queue the message and send it once new chat ID is available.
+        // For simplicity, we'll rely on user resending for now.
       }
+      return;
+    }
+
+    if (inputValue.trim() === "") return;
+
+    setIsSending(true);
+
+    try {
+      // User message is immediately displayed via Convex's optimistic updates
+      // if we were to call a mutation directly here.
+      // However, since we are calling an action, we wait for the action to save both.
+
+      await sendMessageAction({
+        chatId: currentChatId as Id<"chats">, // Ensure type
+        content: inputValue,
+        model: currentModel,
+      });
+      // Messages will update via the useQuery subscription
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      // Optionally, show an error to the user
+    } finally {
+      setIsSending(false);
     }
   };
 
-  const handleExampleClick = (example: string) => {
-    handleSendMessage(example);
-  };
+  if (!currentChatId && !isCreatingChat) {
+    // If there's no chat ID and not in the process of creating one,
+    // show a welcome screen or prompt to start a new chat.
+    // The ChatLayout also tries to auto-navigate or create, so this might be brief.
+    return <WelcomeScreen onNewChat={handleNewChat} isCreatingChat={isCreatingChat} />;
+  }
 
-  if (!currentChatId && messages.length === 0) {
+  if (isCreatingChat && !currentChatId) {
     return (
-      <div className="flex flex-col h-full">
-        <WelcomeScreen onExampleClick={handleExampleClick} />
-        <ChatInput
-          onSendMessage={handleSendMessage}
-          isLoading={isLoading}
-          currentModel={currentModel}
-          onModelChange={onModelChange}
-        />
+      <div className="flex flex-col items-center justify-center h-full">
+        <span className="loading loading-spinner loading-lg"></span>
+        <p className="mt-4">Creating new chat...</p>
       </div>
     );
   }
 
+
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
-          <ChatMessage
-            key={message.id}
-            message={message}
-            onCopy={handleCopyMessage}
-            onRegenerate={
-              message.role === "assistant" ? handleRegenerate : undefined
-            }
-          />
+          <ChatMessage key={message.id} message={message} />
         ))}
-
-        {isLoading && (
-          <div className="flex gap-4 p-6 bg-base-200/50">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 rounded-full bg-secondary text-secondary-content flex items-center justify-center">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-semibold text-sm">{currentModel}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="loading loading-dots loading-sm"></span>
-                <span className="text-sm text-base-content/60">
-                  Thinking...
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div ref={messagesEndRef} />
       </div>
-
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        isLoading={isLoading}
-        currentModel={currentModel}
-        onModelChange={onModelChange}
-      />
+      <div className="p-4 border-t border-base-300">
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          isLoading={isSending || (isCreatingChat && !currentChatId)}
+          disabled={isCreatingChat && !currentChatId} // Disable input while initially creating a chat
+        />
+      </div>
     </div>
   );
-}
+};
 
-export default Chat;
+export default ChatPage;

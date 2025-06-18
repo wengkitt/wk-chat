@@ -1,94 +1,96 @@
-import { useState } from "react";
-import { Outlet } from "react-router";
-import { Header, Sidebar } from "../components";
+import { useState, useEffect } from "react";
+import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api"; // Adjusted path
+import { Doc } from "../../convex/_generated/dataModel"; // Adjusted path
+import Sidebar from "../components/sidebar";
+import Header from "../components/header";
 
-interface Chat {
-  id: string;
-  title: string;
-  timestamp: Date;
-  model: string;
+// Define the type for the context passed via Outlet
+export interface ChatLayoutContext {
+  currentChatId: string | null;
+  chats: Doc<"chats">[] | undefined;
+  currentModel: string;
+  handleNewChat: () => Promise<void>;
+  handleModelChange: (model: string) => void;
+  isCreatingChat: boolean;
 }
 
-function ChatLayout() {
-  const [currentModel, _] = useState("gpt-4");
+const ChatLayout = () => {
+  const navigate = useNavigate();
+  const { chatId: currentChatIdFromParams } = useParams<{ chatId?: string }>();
+
+  const [currentModel, setCurrentModel] = useState<string>("gpt-4"); // Default model
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [chats, setChats] = useState<Chat[]>([
-    {
-      id: "1",
-      title: "Getting started with React",
-      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-      model: "GPT-4",
-    },
-    {
-      id: "2",
-      title: "JavaScript best practices",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-      model: "Claude 3",
-    },
-    {
-      id: "3",
-      title: "CSS Grid vs Flexbox",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-      model: "GPT-3.5 Turbo",
-    },
-  ]);
 
-  const handleNewChat = () => {
-    const newChat: Chat = {
-      id: Date.now().toString(),
-      title: "New conversation",
-      timestamp: new Date(),
-      model: currentModel,
-    };
-    setChats([newChat, ...chats]);
-    setCurrentChatId(newChat.id);
-  };
+  const chats = useQuery(api.chat.listChats);
+  const createChatMutation = useMutation(api.chat.createChat);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
 
-  const handleChatSelect = (chatId: string) => {
-    setCurrentChatId(chatId);
-  };
+  useEffect(() => {
+    setCurrentChatId(currentChatIdFromParams || null);
+  }, [currentChatIdFromParams]);
 
-  const handleChatDelete = (chatId: string) => {
-    setChats(chats.filter((chat) => chat.id !== chatId));
-    if (currentChatId === chatId) {
-      setCurrentChatId(null);
+  // Effect to handle redirection if no chat ID and no chats exist, or select first chat
+  useEffect(() => {
+    if (!currentChatId && chats && chats.length > 0) {
+      // If no chat is selected but chats exist, navigate to the first one
+      navigate(`/chat/${chats[0]._id}`);
+    }
+    // If no currentChatId and no chats, handleNewChat will be called by button or another effect
+  }, [currentChatId, chats, navigate]);
+
+
+  const handleNewChat = async ()_ => {
+    if (isCreatingChat) return;
+    setIsCreatingChat(true);
+    try {
+      const newChatId = await createChatMutation({ name: "New Chat" }); // Pass an optional name
+      navigate(`/chat/${newChatId}`);
+      setCurrentChatId(newChatId); // Ensure currentChatId is updated
+    } catch (error) {
+      console.error("Failed to create new chat:", error);
+      // Optionally, show an error message to the user
+    } finally {
+      setIsCreatingChat(false);
     }
   };
 
-  const handleToggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+  const handleModelChange = (model: string) => {
+    setCurrentModel(model);
+  };
+
+  const outletContext: ChatLayoutContext = {
+    currentChatId,
+    chats,
+    currentModel,
+    handleNewChat,
+    handleModelChange,
+    isCreatingChat,
   };
 
   return (
-    <div className="h-screen flex flex-col bg-base-100">
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          chats={chats}
-          currentChatId={currentChatId}
-          onChatSelect={handleChatSelect}
-          onChatDelete={handleChatDelete}
-          onNewChat={handleNewChat}
-          isOpen={isSidebarOpen}
+    <div className="flex h-screen bg-base-200">
+      <Sidebar
+        chats={chats || []}
+        currentChatId={currentChatId}
+        onNewChat={handleNewChat}
+        isCreatingChat={isCreatingChat}
+      />
+      <div className="flex flex-col flex-1">
+        <Header
+          currentModel={currentModel}
+          onModelChange={handleModelChange}
+          onNewChat={handleNewChat} // Allow header to trigger new chat
+          isMobileMenuOpen={false} // Placeholder, manage actual state if needed
+          onToggleMobileMenu={() => {}} // Placeholder
         />
-
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <Header
-            isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={handleToggleSidebar}
-          />
-          <Outlet
-            context={{
-              currentModel,
-              currentChatId,
-              chats,
-              onNewChat: handleNewChat,
-            }}
-          />
+        <main className="flex-1 overflow-y-auto p-4">
+          <Outlet context={outletContext} />
         </main>
       </div>
     </div>
   );
-}
+};
 
 export default ChatLayout;
