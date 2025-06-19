@@ -1,19 +1,13 @@
 import { Link } from "react-router";
-
-interface Chat {
-  id: string;
-  title: string;
-  timestamp: Date;
-  model: string;
-}
+import type { DisplayChat } from "../layouts/chat-layout"; // Import DisplayChat type
 
 interface SidebarProps {
-  chats: Chat[];
+  chats: DisplayChat[]; // Use DisplayChat type
   currentChatId: string | null;
   onChatSelect: (chatId: string) => void;
   onChatDelete: (chatId: string) => void;
   onNewChat: () => void;
-  isOpen: boolean;
+  // isOpen: boolean; // Assuming this is removed as Sidebar is conditionally rendered
 }
 
 function Sidebar({
@@ -22,7 +16,6 @@ function Sidebar({
   onChatSelect,
   onChatDelete,
   onNewChat,
-  isOpen,
 }: SidebarProps) {
   const formatTime = (date: Date) => {
     const now = new Date();
@@ -40,11 +33,7 @@ function Sidebar({
     if (!groups[timeGroup]) groups[timeGroup] = [];
     groups[timeGroup].push(chat);
     return groups;
-  }, {} as Record<string, Chat[]>);
-
-  if (!isOpen) {
-    return null;
-  }
+  }, {} as Record<string, DisplayChat[]>);
 
   return (
     <aside className="w-80 bg-base-200 border-r border-base-300 flex flex-col">

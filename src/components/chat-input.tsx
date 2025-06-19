@@ -3,8 +3,10 @@ import { hasApiKeyForProvider, getProviderForModel } from "../utils/api-keys";
 import { Link, useNavigate } from "react-router";
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
   isLoading: boolean;
+  inputValue: string;
+  onInputChange: (value: string) => void;
+  onFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   placeholder?: string;
   currentModel: string;
   onModelChange: (model: string) => void;
@@ -18,43 +20,35 @@ const models = [
 ];
 
 function ChatInput({
-  onSendMessage,
   isLoading,
+  inputValue,
+  onInputChange,
+  onFormSubmit,
   placeholder = "Type your message...",
   currentModel,
   onModelChange,
 }: ChatInputProps) {
-  const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const internalHandleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (message.trim() && !isLoading) {
-      const provider = getProviderForModel(currentModel);
-      if (!hasApiKeyForProvider(provider)) {
-        // Show warning or redirect to API keys page
-        const shouldRedirect = confirm(
-          `You need to add an API key for ${
-            models.find((m) => m.id === currentModel)?.provider
-          } to use this model. Would you like to add one now?`
-        );
-        if (shouldRedirect) {
-          navigate("/api-keys");
-        }
-        return;
+    if (!inputValue.trim() || isLoading) return;
+
+    const provider = getProviderForModel(currentModel);
+    if (!hasApiKeyForProvider(provider)) {
+      const modelInfo = models.find((m) => m.id === currentModel);
+      const shouldRedirect = confirm(
+        `You need to add an API key for ${
+          modelInfo?.provider
+        } to use this model. Would you like to add one now?`
+      );
+      if (shouldRedirect) {
+        navigate("/api-keys");
       }
-
-      onSendMessage(message.trim());
-      setMessage("");
+      return;
     }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
-    }
+    onFormSubmit(e);
   };
 
   // Auto-resize textarea
@@ -63,14 +57,14 @@ function ChatInput({
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-  }, [message]);
+  }, [inputValue]);
 
   const currentProvider = getProviderForModel(currentModel);
   const hasRequiredApiKey = hasApiKeyForProvider(currentProvider);
 
   return (
     <div className="border-t border-base-300 bg-base-100 p-4">
-      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+      <form onSubmit={internalHandleSubmit} className="max-w-4xl mx-auto">
         {!hasRequiredApiKey && (
           <div className="alert alert-warning mb-4">
             <svg
@@ -103,9 +97,8 @@ function ChatInput({
         <div className="relative">
           <textarea
             ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
+            value={inputValue}
+            onChange={(e) => onInputChange(e.target.value)}
             placeholder={
               hasRequiredApiKey
                 ? placeholder
@@ -123,7 +116,7 @@ function ChatInput({
 
             <button
               type="submit"
-              disabled={!message.trim() || isLoading || !hasRequiredApiKey}
+              disabled={!inputValue.trim() || isLoading || !hasRequiredApiKey}
               className="btn btn-primary btn-sm btn-circle"
             >
               <svg
