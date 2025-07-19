@@ -107,7 +107,7 @@ function ChatMessages({ chatId }: ChatMessagesProps) {
         <div ref={messagesEndRef} />
       </div>
       {showScrollButton && (
-        <div className="sticky bottom-1.5 left-0 right-0 flex justify-center">
+        <div className="sticky bottom-2 left-0 right-0 flex justify-center">
           <Button
             size="xs"
             onClick={handleScrollToBottom}

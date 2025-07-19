@@ -156,7 +156,7 @@ export default function ChatInput({ chatId: currentChatId }: ChatInputProps) {
               }
               disabled={isLoading || !hasRequiredApiKey || isModelsLoading}
               rows={1}
-              className={`min-h-[60px] max-h-[100px] resize-none text-base border-none shadow-none focus-visible:ring-0 ${
+              className={`min-h-[60px] max-h-[100px] resize-none text-base border-none shadow-none focus-visible:ring-0 dark:bg-sidebar ${
                 isModelsLoading ? "animate-pulse" : ""
               }`}
             />

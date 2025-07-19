@@ -35,9 +35,9 @@ const MessageBubble = React.memo(function MessageBubble({
       <div className="flex flex-col">
         <div
           className={cn(
-            "relative rounded-2xl transition-all",
+            "relative rounded-lg transition-all",
             isUser &&
-              "bg-primary text-primary-foreground max-w-[80vw] md:max-w-xl lg:max-w-2xl border px-4 py-3 "
+              "bg-primary text-primary-foreground max-w-[80vw] md:max-w-xl lg:max-w-2xl border px-4 py-2"
           )}
         >
           <article className="prose prose-sm dark:prose-invert max-w-none">
@@ -63,7 +63,7 @@ const MessageBubble = React.memo(function MessageBubble({
                       >
                         <Copy className="w-4 h-4" />
                       </Button>
-                      <pre className="overflow-x-auto rounded-lg px-4 pt-3 pb-6 text-sm">
+                      <pre className="overflow-x-auto bg-background rounded-lg px-4 pt-3 pb-6 text-sm">
                         <code className={cn(className, "block")} {...rest}>
                           {children}
                         </code>
