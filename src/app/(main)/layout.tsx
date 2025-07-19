@@ -1,11 +1,7 @@
 "use client";
 
 import { AppSidebar } from "@/components/custom/app-sidebar";
-import {
-  SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
-} from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import React from "react";
 
 export default function MainLayout({
@@ -16,7 +12,9 @@ export default function MainLayout({
   const { state } = useSidebar();
 
   return (
-    <main className={`flex h-screen ${state == "expanded" && "bg-sidebar"} `}>
+    <main
+      className={`flex h-screen w-full ${state == "expanded" && "bg-sidebar"} `}
+    >
       <AppSidebar />
 
       <div className="flex flex-col flex-1 p-4">
@@ -24,15 +22,13 @@ export default function MainLayout({
           {state == "collapsed" && <SidebarTrigger />}
         </div>
 
-        {state == "expanded" ? (
-          // Content with rounded corners when sidebar is open
-          <div className="flex-1 bg-background rounded-2xl p-6 overflow-hidden">
-            {children}
-          </div>
-        ) : (
-          // Fullscreen content when sidebar is closed
-          <div className="flex-1 w-full h-full">{children}</div>
-        )}
+        <div
+          className={`flex-1 w-full h-full ${
+            state == "expanded" && "bg-background rounded-2xl p-6"
+          } overflow-hidden`}
+        >
+          {children}
+        </div>
       </div>
     </main>
   );
